@@ -11,10 +11,12 @@ from loguru import logger
 from config import config
 from services.claude_code import ask_claude, _claude_service
 from services.user_profile import UserProfileService
+from services.memory import MemoryService
 from storage.database import Database
 
 db: Database = None
 user_profile_service: UserProfileService = None
+memory_service: MemoryService = None
 
 
 def is_allowed(user_id: int) -> bool:

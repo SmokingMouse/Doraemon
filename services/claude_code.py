@@ -1,6 +1,7 @@
 import asyncio
 from collections import defaultdict
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 from loguru import logger
 from config import config
@@ -9,6 +10,7 @@ from config import config
 @dataclass
 class ClaudeRequest:
     """Claude Code 请求"""
+
     message: str
     session_id: Optional[str]
     response_future: asyncio.Future
@@ -24,9 +26,20 @@ class ClaudeCodeService:
         )
         # 每个 session 一个 worker
         self._workers: dict[str, asyncio.Task] = {}
+        # Claude Code 会话文件目录（按项目路径）
+        project_path = Path.cwd().as_posix().replace("/", "-")
+        self._session_dir = Path.home() / ".claude" / "projects" / project_path
 
-    async def ask_claude(self, message: str, session_id: str = None) -> str:
-        """提交请求到队列，等待响应"""
+    async def ask_claude(
+        self, message: str, session_id: str = None, context: str = None
+    ) -> str:
+        """提交请求到队列，等待响应
+
+        Args:
+            message: 用户消息
+            session_id: 会话 ID
+            context: 对话历史上下文（可选）
+        """
         # 创建响应 future
         response_future = asyncio.Future()
 
@@ -36,6 +49,10 @@ class ClaudeCodeService:
             session_id=session_id,
             response_future=response_future,
         )
+
+        # 如果有上下文，将其添加到消息前
+        if context:
+            request.message = f"{context}\n\n当前消息：{message}"
 
         # 获取或创建队列
         queue = self._session_queues[session_id or "default"]
@@ -101,7 +118,16 @@ class ClaudeCodeService:
             # Build command
             cmd = [config.CLAUDE_CODE_PATH, "--print"]
             if session_id:
-                cmd.extend(["--session-id", session_id])
+                # 检查会话文件是否存在
+                session_file = self._session_dir / f"{session_id}.jsonl"
+                if session_file.exists():
+                    # 会话存在，使用 --resume 恢复
+                    cmd.extend(["--resume", session_id])
+                    logger.debug(f"Resuming existing session: {session_id}")
+                else:
+                    # 会话不存在，使用 --session-id 创建
+                    cmd.extend(["--session-id", session_id])
+                    logger.debug(f"Creating new session: {session_id}")
 
             logger.debug(f"Starting Claude Code process: {' '.join(cmd)}")
             process = await asyncio.create_subprocess_exec(
@@ -138,6 +164,11 @@ class ClaudeCodeService:
 
             response = stdout.decode().strip()
             logger.debug(f"Claude Code response: {len(response)} chars")
+
+            # 清理会话文件，避免锁定问题
+            if session_id:
+                self._cleanup_session(session_id)
+
             return response
 
         except FileNotFoundError:
@@ -155,6 +186,19 @@ class ClaudeCodeService:
                     await process.wait()
                 except Exception as e:
                     logger.error(f"Failed to cleanup process: {e}")
+
+    def _cleanup_session(self, session_id: str):
+        """清理会话文件，释放 session ID"""
+        try:
+            # Claude Code 会话文件路径
+            session_file = self._session_dir / f"{session_id}.jsonl"
+            if session_file.exists():
+                session_file.unlink()
+                logger.info(f"Cleaned up session file: {session_id}")
+            else:
+                logger.debug(f"Session file not found: {session_id}")
+        except Exception as e:
+            logger.warning(f"Failed to cleanup session {session_id}: {e}")
 
     def get_queue_size(self, session_id: str = None) -> int:
         """获取队列大小"""
