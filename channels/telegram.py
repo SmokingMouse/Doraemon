@@ -69,10 +69,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Sorry, you're not authorized to use this bot.")
         return
 
-    await context.bot.send_chat_action(
-        chat_id=update.effective_chat.id, action="typing"
-    )
-
     user_id = await db.get_or_create_user(user.id, user.username, user.first_name)
     session_id, claude_session_id = await db.get_or_create_session(user_id)
 
@@ -80,6 +76,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await db.save_message(session_id, "user", message_text)
 
     logger.info(f"User {user.id} ({user.first_name}): {message_text[:50]}...")
+
+    # Send typing indicator
+    await context.bot.send_chat_action(
+        chat_id=update.effective_chat.id, action="typing"
+    )
 
     # Call Claude Code with session ID for context persistence
     response = await ask_claude(message_text, session_id=claude_session_id)

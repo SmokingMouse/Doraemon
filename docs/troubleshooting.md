@@ -2,7 +2,32 @@
 
 ## 常见问题
 
-### 1. Telegram 超时错误 (TimedOut)
+### 1. Session ID 已在使用中
+
+**错误信息**：
+```
+Error: Session ID xxx is already in use.
+```
+
+**原因**：
+- 用户快速发送多条消息，导致并发访问同一个 session
+- 之前的 Claude Code 进程未正常退出
+
+**解决方案**：
+
+已自动修复！系统现在使用锁机制防止并发访问。如果仍然遇到此错误：
+
+1. 等待几秒后重试
+2. 检查是否有其他 Claude Code 进程在运行：
+   ```bash
+   ps aux | grep claude
+   ```
+3. 如果有僵尸进程，终止它们：
+   ```bash
+   pkill -f "claude.*session-id"
+   ```
+
+### 2. Telegram 超时错误 (TimedOut)
 
 **错误信息**：
 ```
