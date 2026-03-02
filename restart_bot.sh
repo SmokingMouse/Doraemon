@@ -3,23 +3,34 @@
 
 echo "🔄 重启 Doraemon Bot..."
 
-# 1. 停止现有进程
-echo "1. 停止现有进程..."
-pkill -f "python.*main.py" 2>/dev/null && echo "   ✓ 已停止旧进程" || echo "   ✓ 没有运行中的进程"
+# 1. 停止所有现有进程（包括 uv run 和 python）
+echo "1. 停止所有现有进程..."
+pkill -9 -f "python.*main.py" 2>/dev/null
+pkill -9 -f "uv run.*main.py" 2>/dev/null
+sleep 2
 
-# 2. 等待进程完全退出
-sleep 1
+# 验证是否还有进程在运行
+REMAINING=$(ps aux | grep -E "python.*main.py" | grep -v grep | wc -l)
+if [ $REMAINING -gt 0 ]; then
+    echo "   ⚠️  警告: 仍有 $REMAINING 个进程在运行"
+    ps aux | grep -E "python.*main.py" | grep -v grep
+    echo "   请手动停止这些进程"
+    exit 1
+else
+    echo "   ✓ 所有旧进程已停止"
+fi
 
-# 3. 启动新进程
+# 2. 启动新进程
 echo "2. 启动新进程..."
+cd "$(dirname "$0")"
 source .venv/bin/activate
 nohup python main.py > ./data/logs/bot.log 2>&1 &
 BOT_PID=$!
 
-# 4. 等待启动
+# 3. 等待启动
 sleep 2
 
-# 5. 检查是否成功启动
+# 4. 检查是否成功启动
 if ps -p $BOT_PID > /dev/null; then
     echo "   ✓ Bot 已启动 (PID: $BOT_PID)"
     echo ""
@@ -27,6 +38,8 @@ if ps -p $BOT_PID > /dev/null; then
     echo ""
     echo "查看日志: tail -f ./data/logs/bot.log"
     echo "停止 Bot: kill $BOT_PID"
+    echo ""
+    echo "⚠️  重要: 请确保只运行一个 bot 实例！"
 else
     echo "   ❌ Bot 启动失败"
     echo ""
