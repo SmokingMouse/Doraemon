@@ -3,12 +3,21 @@ from loguru import logger
 from config import config
 
 
-async def ask_claude(message: str) -> str:
-    """Call Claude Code CLI and return the response."""
+async def ask_claude(message: str, session_id: str = None) -> str:
+    """Call Claude Code CLI and return the response.
+
+    Args:
+        message: The user's message
+        session_id: Optional Claude Code session ID for context persistence
+    """
     try:
+        # Build command with optional session ID
+        cmd = [config.CLAUDE_CODE_PATH, "--print"]
+        if session_id:
+            cmd.extend(["--session-id", session_id])
+
         process = await asyncio.create_subprocess_exec(
-            config.CLAUDE_CODE_PATH,
-            "--print",
+            *cmd,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,

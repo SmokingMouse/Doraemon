@@ -27,6 +27,7 @@ class Database:
                 CREATE TABLE IF NOT EXISTS sessions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
+                    claude_session_id TEXT UNIQUE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id)
@@ -67,11 +68,13 @@ class Database:
             await db.commit()
             return cursor.lastrowid
 
-    async def get_or_create_session(self, user_id: int) -> int:
-        """Get active session or create new one. Returns session ID."""
+    async def get_or_create_session(self, user_id: int) -> tuple[int, str]:
+        """Get active session or create new one. Returns (session_id, claude_session_id)."""
+        import uuid
+
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
-                "SELECT id FROM sessions WHERE user_id = ? ORDER BY last_active DESC LIMIT 1",
+                "SELECT id, claude_session_id FROM sessions WHERE user_id = ? ORDER BY last_active DESC LIMIT 1",
                 (user_id,),
             )
             row = await cursor.fetchone()
@@ -81,13 +84,16 @@ class Database:
                     (row[0],),
                 )
                 await db.commit()
-                return row[0]
+                return row[0], row[1]
 
+            # Create new session with unique Claude session ID
+            claude_session_id = str(uuid.uuid4())
             cursor = await db.execute(
-                "INSERT INTO sessions (user_id) VALUES (?)", (user_id,)
+                "INSERT INTO sessions (user_id, claude_session_id) VALUES (?, ?)",
+                (user_id, claude_session_id),
             )
             await db.commit()
-            return cursor.lastrowid
+            return cursor.lastrowid, claude_session_id
 
     async def save_message(self, session_id: int, role: str, content: str):
         """Save a message to the database."""
@@ -97,3 +103,60 @@ class Database:
                 (session_id, role, content),
             )
             await db.commit()
+
+    async def get_recent_messages(self, session_id: int, limit: int = 10) -> list[dict]:
+        """Get recent messages for a session."""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            cursor = await db.execute(
+                """
+                SELECT role, content, created_at
+                FROM messages
+                WHERE session_id = ?
+                ORDER BY created_at DESC
+                LIMIT ?
+                """,
+                (session_id, limit),
+            )
+            rows = await cursor.fetchall()
+            # Reverse to get chronological order
+            return [dict(row) for row in reversed(rows)]
+
+    async def get_user_stats(self, user_id: int) -> dict:
+        """Get statistics for a user."""
+        async with aiosqlite.connect(self.db_path) as db:
+            # Get total message count
+            cursor = await db.execute(
+                """
+                SELECT COUNT(*)
+                FROM messages m
+                JOIN sessions s ON m.session_id = s.id
+                WHERE s.user_id = ? AND m.role = 'user'
+                """,
+                (user_id,),
+            )
+            message_count = (await cursor.fetchone())[0]
+
+            # Get session count
+            cursor = await db.execute(
+                "SELECT COUNT(*) FROM sessions WHERE user_id = ?", (user_id,)
+            )
+            session_count = (await cursor.fetchone())[0]
+
+            # Get first and last activity
+            cursor = await db.execute(
+                """
+                SELECT MIN(created_at), MAX(last_active)
+                FROM sessions
+                WHERE user_id = ?
+                """,
+                (user_id,),
+            )
+            first_seen, last_active = await cursor.fetchone()
+
+            return {
+                "message_count": message_count,
+                "session_count": session_count,
+                "first_seen": first_seen,
+                "last_active": last_active,
+            }

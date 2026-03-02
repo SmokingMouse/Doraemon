@@ -9,9 +9,11 @@ from telegram.ext import (
 from loguru import logger
 from config import config
 from services.claude_code import ask_claude
+from services.user_profile import UserProfileService
 from storage.database import Database
 
 db: Database = None
+user_profile_service: UserProfileService = None
 
 
 def is_allowed(user_id: int) -> bool:
@@ -33,8 +35,29 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Send me any message and I'll respond using Claude.\n\n"
-        "I save our conversation history so you can refer back to it."
+        "I remember our conversation history within each session.\n\n"
+        "Commands:\n"
+        "/start - Welcome message\n"
+        "/help - Show this help\n"
+        "/stats - Show your usage statistics"
     )
+
+
+async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show user statistics."""
+    user = update.effective_user
+    user_id = await db.get_or_create_user(user.id, user.username, user.first_name)
+    stats = await db.get_user_stats(user_id)
+
+    stats_text = (
+        f"📊 你的统计信息\n\n"
+        f"💬 消息数: {stats['message_count']}\n"
+        f"🔄 会话数: {stats['session_count']}\n"
+        f"📅 首次使用: {stats['first_seen']}\n"
+        f"⏰ 最后活跃: {stats['last_active']}"
+    )
+
+    await update.message.reply_text(stats_text)
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -50,14 +73,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     user_id = await db.get_or_create_user(user.id, user.username, user.first_name)
-    session_id = await db.get_or_create_session(user_id)
+    session_id, claude_session_id = await db.get_or_create_session(user_id)
 
     message_text = update.message.text
     await db.save_message(session_id, "user", message_text)
 
     logger.info(f"User {user.id} ({user.first_name}): {message_text[:50]}...")
 
-    response = await ask_claude(message_text)
+    # Call Claude Code with session ID for context persistence
+    response = await ask_claude(message_text, session_id=claude_session_id)
     await db.save_message(session_id, "assistant", response)
 
     # Split long messages (Telegram limit is 4096 chars)
@@ -69,12 +93,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def create_app(database: Database) -> Application:
-    global db
+    global db, user_profile_service
     db = database
+    user_profile_service = UserProfileService(database)
 
     app = Application.builder().token(config.TELEGRAM_BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_cmd))
+    app.add_handler(CommandHandler("stats", stats_cmd))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     return app
