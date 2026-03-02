@@ -1,27 +1,99 @@
 import asyncio
-import signal
 from collections import defaultdict
+from dataclasses import dataclass
+from typing import Optional
 from loguru import logger
 from config import config
 
-# Session locks to prevent concurrent access to the same Claude Code session
-_session_locks: dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
+
+@dataclass
+class ClaudeRequest:
+    """Claude Code 请求"""
+    message: str
+    session_id: Optional[str]
+    response_future: asyncio.Future
 
 
-async def ask_claude(message: str, session_id: str = None) -> str:
-    """Call Claude Code CLI and return the response.
+class ClaudeCodeService:
+    """Claude Code 服务，使用队列管理请求"""
 
-    Args:
-        message: The user's message
-        session_id: Optional Claude Code session ID for context persistence
-    """
-    # Acquire lock for this session to prevent concurrent access
-    lock = _session_locks[session_id] if session_id else None
+    def __init__(self):
+        # 每个 session 一个队列
+        self._session_queues: dict[str, asyncio.Queue] = defaultdict(
+            lambda: asyncio.Queue()
+        )
+        # 每个 session 一个 worker
+        self._workers: dict[str, asyncio.Task] = {}
 
-    async def _call_claude():
+    async def ask_claude(self, message: str, session_id: str = None) -> str:
+        """提交请求到队列，等待响应"""
+        # 创建响应 future
+        response_future = asyncio.Future()
+
+        # 创建请求
+        request = ClaudeRequest(
+            message=message,
+            session_id=session_id,
+            response_future=response_future,
+        )
+
+        # 获取或创建队列
+        queue = self._session_queues[session_id or "default"]
+
+        # 启动 worker（如果还没启动）
+        worker_key = session_id or "default"
+        if worker_key not in self._workers or self._workers[worker_key].done():
+            self._workers[worker_key] = asyncio.create_task(
+                self._process_queue(worker_key, queue)
+            )
+
+        # 提交请求到队列
+        await queue.put(request)
+        logger.debug(
+            f"Request queued for session {session_id}, queue size: {queue.qsize()}"
+        )
+
+        # 等待响应
+        return await response_future
+
+    async def _process_queue(self, worker_key: str, queue: asyncio.Queue):
+        """处理队列中的请求（每个 session 一个 worker）"""
+        logger.info(f"Worker started for session: {worker_key}")
+
+        while True:
+            try:
+                # 从队列获取请求
+                request: ClaudeRequest = await queue.get()
+
+                logger.debug(
+                    f"Processing request for session {request.session_id}, "
+                    f"remaining in queue: {queue.qsize()}"
+                )
+
+                # 执行请求
+                try:
+                    response = await self._call_claude_process(
+                        request.message, request.session_id
+                    )
+                    request.response_future.set_result(response)
+                except Exception as e:
+                    request.response_future.set_exception(e)
+                finally:
+                    queue.task_done()
+
+            except asyncio.CancelledError:
+                logger.info(f"Worker cancelled for session: {worker_key}")
+                break
+            except Exception as e:
+                logger.exception(f"Worker error for session {worker_key}: {e}")
+
+    async def _call_claude_process(
+        self, message: str, session_id: Optional[str]
+    ) -> str:
+        """实际调用 Claude Code CLI"""
         process = None
         try:
-            # Build command with optional session ID
+            # Build command
             cmd = [config.CLAUDE_CODE_PATH, "--print"]
             if session_id:
                 cmd.extend(["--session-id", session_id])
@@ -41,7 +113,6 @@ async def ask_claude(message: str, session_id: str = None) -> str:
                 )
             except asyncio.TimeoutError:
                 logger.error(f"Claude Code timed out, killing process {process.pid}")
-                # Force kill the process
                 try:
                     process.kill()
                     await process.wait()
@@ -51,9 +122,10 @@ async def ask_claude(message: str, session_id: str = None) -> str:
 
             if process.returncode != 0:
                 error_msg = stderr.decode()
-                logger.error(f"Claude Code error (rc={process.returncode}): {error_msg}")
+                logger.error(
+                    f"Claude Code error (rc={process.returncode}): {error_msg}"
+                )
 
-                # Check for specific error messages
                 if "already in use" in error_msg.lower():
                     return "⚠️ 会话正在处理中，请稍等片刻再试。"
 
@@ -79,9 +151,22 @@ async def ask_claude(message: str, session_id: str = None) -> str:
                 except Exception as e:
                     logger.error(f"Failed to cleanup process: {e}")
 
-    # Use lock if session_id is provided
-    if lock:
-        async with lock:
-            return await _call_claude()
-    else:
-        return await _call_claude()
+    def get_queue_size(self, session_id: str = None) -> int:
+        """获取队列大小"""
+        key = session_id or "default"
+        return self._session_queues[key].qsize()
+
+    async def shutdown(self):
+        """关闭所有 worker"""
+        for worker in self._workers.values():
+            worker.cancel()
+        await asyncio.gather(*self._workers.values(), return_exceptions=True)
+
+
+# 全局实例
+_claude_service = ClaudeCodeService()
+
+
+async def ask_claude(message: str, session_id: str = None) -> str:
+    """兼容接口"""
+    return await _claude_service.ask_claude(message, session_id)

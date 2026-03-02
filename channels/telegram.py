@@ -9,7 +9,7 @@ from telegram.ext import (
 from telegram.error import TimedOut, NetworkError
 from loguru import logger
 from config import config
-from services.claude_code import ask_claude
+from services.claude_code import ask_claude, _claude_service
 from services.user_profile import UserProfileService
 from storage.database import Database
 
@@ -50,12 +50,19 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = await db.get_or_create_user(user.id, user.username, user.first_name)
     stats = await db.get_user_stats(user_id)
 
+    # Get session info
+    session_id, claude_session_id = await db.get_or_create_session(user_id)
+
+    # Get queue size
+    queue_size = _claude_service.get_queue_size(claude_session_id)
+
     stats_text = (
         f"📊 你的统计信息\n\n"
         f"💬 消息数: {stats['message_count']}\n"
         f"🔄 会话数: {stats['session_count']}\n"
         f"📅 首次使用: {stats['first_seen']}\n"
-        f"⏰ 最后活跃: {stats['last_active']}"
+        f"⏰ 最后活跃: {stats['last_active']}\n\n"
+        f"📋 当前队列: {queue_size} 条消息等待处理"
     )
 
     await update.message.reply_text(stats_text)
