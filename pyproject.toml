@@ -1,0 +1,16 @@
+[project]
+name = "doraemon"
+version = "0.1.0"
+description = "Personal AI assistant powered by Claude Code"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "python-telegram-bot[socks]>=21.0",
+    "aiosqlite>=0.19.0",
+    "pydantic>=2.0",
+    "loguru>=0.7.0",
+    "python-dotenv>=1.0.0",
+]
+
+[tool.setuptools]
+packages = ["channels", "core", "services", "storage", "utils"]
