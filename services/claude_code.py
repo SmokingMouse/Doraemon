@@ -77,7 +77,12 @@ class ClaudeCodeService:
                     )
                     request.response_future.set_result(response)
                 except Exception as e:
-                    request.response_future.set_exception(e)
+                    # 记录错误但继续处理队列
+                    logger.error(f"Failed to process request: {e}")
+                    # 返回友好的错误消息
+                    request.response_future.set_result(
+                        "抱歉，处理消息时出错了。请稍后重试。"
+                    )
                 finally:
                     queue.task_done()
 

@@ -25,10 +25,19 @@ echo "2. 启动新进程..."
 cd "$(dirname "$0")"
 source .venv/bin/activate
 
-# 重要: 取消 CLAUDECODE 环境变量，允许 bot 调用 Claude Code
+# 重要: 在 Python 中取消 Claude Code 环境变量
+# 创建一个启动包装脚本
+cat > /tmp/start_doraemon.sh <<'EOF'
+#!/bin/bash
 unset CLAUDECODE
+unset CLAUDE_CODE_SSE_PORT
+unset CLAUDE_CODE_ENTRYPOINT
+unset CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+exec python main.py
+EOF
+chmod +x /tmp/start_doraemon.sh
 
-nohup python main.py > ./data/logs/bot.log 2>&1 &
+nohup /tmp/start_doraemon.sh > ./data/logs/bot.log 2>&1 &
 BOT_PID=$!
 
 # 3. 等待启动
