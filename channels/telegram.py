@@ -6,6 +6,7 @@ from telegram.ext import (
     filters,
     ContextTypes,
 )
+from telegram.error import TimedOut, NetworkError
 from loguru import logger
 from config import config
 from services.claude_code import ask_claude
@@ -84,12 +85,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response = await ask_claude(message_text, session_id=claude_session_id)
     await db.save_message(session_id, "assistant", response)
 
-    # Split long messages (Telegram limit is 4096 chars)
-    if len(response) > 4096:
-        for i in range(0, len(response), 4096):
-            await update.message.reply_text(response[i : i + 4096])
-    else:
-        await update.message.reply_text(response)
+    # Send response with error handling
+    try:
+        # Split long messages (Telegram limit is 4096 chars)
+        if len(response) > 4096:
+            for i in range(0, len(response), 4096):
+                await update.message.reply_text(response[i : i + 4096])
+        else:
+            await update.message.reply_text(response)
+    except TimedOut:
+        logger.error("Telegram send message timed out")
+        await update.message.reply_text(
+            "⚠️ 发送响应超时，可能是网络问题。响应已保存，请稍后使用 /history 查看。"
+        )
+    except NetworkError as e:
+        logger.error(f"Telegram network error: {e}")
+        await update.message.reply_text(
+            "⚠️ 网络错误，请检查代理设置或稍后重试。"
+        )
 
 
 def create_app(database: Database) -> Application:
@@ -97,7 +110,20 @@ def create_app(database: Database) -> Application:
     db = database
     user_profile_service = UserProfileService(database)
 
-    app = Application.builder().token(config.TELEGRAM_BOT_TOKEN).build()
+    # Build application with timeout settings
+    builder = Application.builder().token(config.TELEGRAM_BOT_TOKEN)
+
+    # Configure timeouts
+    builder.read_timeout(config.TELEGRAM_READ_TIMEOUT)
+    builder.write_timeout(config.TELEGRAM_WRITE_TIMEOUT)
+    builder.connect_timeout(config.TELEGRAM_CONNECT_TIMEOUT)
+
+    # Configure proxy if provided
+    if config.TELEGRAM_PROXY_URL:
+        logger.info(f"Using proxy: {config.TELEGRAM_PROXY_URL}")
+        builder.proxy_url(config.TELEGRAM_PROXY_URL)
+
+    app = builder.build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_cmd))
     app.add_handler(CommandHandler("stats", stats_cmd))

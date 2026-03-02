@@ -11,8 +11,17 @@ class Config:
         for uid in os.getenv("TELEGRAM_ALLOWED_USERS", "").split(",")
         if uid.strip()
     ]
+
+    # Proxy settings (for users in China or behind firewall)
+    TELEGRAM_PROXY_URL: str = os.getenv("TELEGRAM_PROXY_URL", "")
+
     CLAUDE_CODE_PATH: str = os.getenv("CLAUDE_CODE_PATH", "claude")
     DATABASE_PATH: str = os.getenv("DATABASE_PATH", "./data/doraemon.db")
+
+    # Timeout settings
+    TELEGRAM_READ_TIMEOUT: int = int(os.getenv("TELEGRAM_READ_TIMEOUT", "30"))
+    TELEGRAM_WRITE_TIMEOUT: int = int(os.getenv("TELEGRAM_WRITE_TIMEOUT", "30"))
+    TELEGRAM_CONNECT_TIMEOUT: int = int(os.getenv("TELEGRAM_CONNECT_TIMEOUT", "10"))
 
     @classmethod
     def validate(cls):
