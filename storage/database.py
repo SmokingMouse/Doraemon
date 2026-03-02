@@ -95,6 +95,15 @@ class Database:
             await db.commit()
             return cursor.lastrowid, claude_session_id
 
+    async def update_session_claude_id(self, session_id: int, new_claude_session_id: str):
+        """Update the claude_session_id for a session."""
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                "UPDATE sessions SET claude_session_id = ? WHERE id = ?",
+                (new_claude_session_id, session_id),
+            )
+            await db.commit()
+
     async def save_message(self, session_id: int, role: str, content: str):
         """Save a message to the database."""
         async with aiosqlite.connect(self.db_path) as db:

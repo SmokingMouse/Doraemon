@@ -1,8 +1,9 @@
 import asyncio
+import uuid
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 from loguru import logger
 from config import config
 
@@ -89,10 +90,17 @@ class ClaudeCodeService:
 
                 # 执行请求
                 try:
-                    response = await self._call_claude_process(
+                    result = await self._call_claude_process(
                         request.message, request.session_id
                     )
-                    request.response_future.set_result(response)
+
+                    # 检查是否返回了新的 session id
+                    if isinstance(result, tuple):
+                        response, new_session_id = result
+                        request.response_future.set_result((response, new_session_id))
+                    else:
+                        request.response_future.set_result(result)
+
                 except Exception as e:
                     # 记录错误但继续处理队列
                     logger.error(f"Failed to process request: {e}")
@@ -111,23 +119,22 @@ class ClaudeCodeService:
 
     async def _call_claude_process(
         self, message: str, session_id: Optional[str]
-    ) -> str:
-        """实际调用 Claude Code CLI"""
+    ) -> str | Tuple[str, str]:
+        """实际调用 Claude Code CLI
+
+        Returns:
+            str: 响应内容
+            或 Tuple[str, str]: (响应内容, 新的session_id) 当需要更新session_id时
+        """
         process = None
         try:
             # Build command
             cmd = [config.CLAUDE_CODE_PATH, "--print"]
+
+            # 优先使用 resume
             if session_id:
-                # 检查会话文件是否存在
-                session_file = self._session_dir / f"{session_id}.jsonl"
-                if session_file.exists():
-                    # 会话存在，使用 --resume 恢复
-                    cmd.extend(["--resume", session_id])
-                    logger.debug(f"Resuming existing session: {session_id}")
-                else:
-                    # 会话不存在，使用 --session-id 创建
-                    cmd.extend(["--session-id", session_id])
-                    logger.debug(f"Creating new session: {session_id}")
+                cmd.extend(["--resume", session_id])
+                logger.debug(f"Attempting to resume session: {session_id}")
 
             logger.debug(f"Starting Claude Code process: {' '.join(cmd)}")
             process = await asyncio.create_subprocess_exec(
@@ -157,18 +164,23 @@ class ClaudeCodeService:
                     f"Claude Code error (rc={process.returncode}): {error_msg}"
                 )
 
-                if "already in use" in error_msg.lower():
-                    return "⚠️ 会话正在处理中，请稍等片刻再试。"
+                # Resume 失败，尝试创建新会话
+                if session_id and ("already in use" in error_msg.lower() or
+                                  "no conversation found" in error_msg.lower()):
+                    logger.warning(f"Resume failed for {session_id}, creating new session")
+                    new_session_id = str(uuid.uuid4())
+
+                    # 递归调用，用新 session id 创建会话
+                    result = await self._call_claude_process_with_new_session(
+                        message, new_session_id
+                    )
+                    # 返回响应和新的 session id
+                    return (result, new_session_id)
 
                 return "抱歉，遇到了错误。请稍后重试。"
 
             response = stdout.decode().strip()
             logger.debug(f"Claude Code response: {len(response)} chars")
-
-            # 清理会话文件，避免锁定问题
-            if session_id:
-                self._cleanup_session(session_id)
-
             return response
 
         except FileNotFoundError:
@@ -182,6 +194,54 @@ class ClaudeCodeService:
             if process and process.returncode is None:
                 try:
                     logger.warning(f"Cleaning up process {process.pid}")
+                    process.kill()
+                    await process.wait()
+                except Exception as e:
+                    logger.error(f"Failed to cleanup process: {e}")
+
+    async def _call_claude_process_with_new_session(
+        self, message: str, session_id: str
+    ) -> str:
+        """使用新 session id 创建会话"""
+        process = None
+        try:
+            cmd = [config.CLAUDE_CODE_PATH, "--print", "--session-id", session_id]
+            logger.info(f"Creating new session: {session_id}")
+
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(input=message.encode()),
+                    timeout=120,
+                )
+            except asyncio.TimeoutError:
+                logger.error(f"Claude Code timed out")
+                if process:
+                    process.kill()
+                    await process.wait()
+                return "⏱️ 请求超时（120秒），请尝试发送更简短的消息。"
+
+            if process.returncode != 0:
+                error_msg = stderr.decode()
+                logger.error(f"Failed to create new session: {error_msg}")
+                return "抱歉，创建新会话失败。请稍后重试。"
+
+            response = stdout.decode().strip()
+            logger.info(f"New session created successfully: {session_id}")
+            return response
+
+        except Exception as e:
+            logger.exception(f"Error creating new session: {e}")
+            return "抱歉，出现了问题。请稍后重试。"
+        finally:
+            if process and process.returncode is None:
+                try:
                     process.kill()
                     await process.wait()
                 except Exception as e:

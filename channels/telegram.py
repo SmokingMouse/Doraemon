@@ -92,7 +92,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     # Call Claude Code with session ID for context persistence
-    response = await ask_claude(message_text, session_id=claude_session_id)
+    result = await ask_claude(message_text, session_id=claude_session_id)
+
+    # 检查是否返回了新的 session id
+    if isinstance(result, tuple):
+        response, new_claude_session_id = result
+        # 更新数据库中的 claude_session_id
+        await db.update_session_claude_id(session_id, new_claude_session_id)
+        logger.info(f"Updated claude_session_id to: {new_claude_session_id}")
+    else:
+        response = result
+
     await db.save_message(session_id, "assistant", response)
 
     # Send response with error handling
