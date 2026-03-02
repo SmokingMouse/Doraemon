@@ -24,6 +24,10 @@ fi
 echo "2. 启动新进程..."
 cd "$(dirname "$0")"
 source .venv/bin/activate
+
+# 重要: 取消 CLAUDECODE 环境变量，允许 bot 调用 Claude Code
+unset CLAUDECODE
+
 nohup python main.py > ./data/logs/bot.log 2>&1 &
 BOT_PID=$!
 
