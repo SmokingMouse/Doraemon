@@ -23,6 +23,19 @@ class Config:
     TELEGRAM_WRITE_TIMEOUT: int = int(os.getenv("TELEGRAM_WRITE_TIMEOUT", "30"))
     TELEGRAM_CONNECT_TIMEOUT: int = int(os.getenv("TELEGRAM_CONNECT_TIMEOUT", "10"))
 
+    # Web settings
+    WEB_HOST: str = os.getenv("WEB_HOST", "0.0.0.0")
+    WEB_PORT: int = int(os.getenv("WEB_PORT", "8765"))  # 小众端口，避免冲突
+    WEB_SECRET_KEY: str = os.getenv("WEB_SECRET_KEY", "change-me-in-production")
+    WEB_ALLOWED_ORIGINS: list[str] = [
+        origin.strip()
+        for origin in os.getenv("WEB_ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+        if origin.strip()
+    ]
+
+    # Frontend settings
+    FRONTEND_PORT: int = int(os.getenv("FRONTEND_PORT", "5173"))  # Vite 默认端口
+
     @classmethod
     def validate(cls):
         if not cls.TELEGRAM_BOT_TOKEN:

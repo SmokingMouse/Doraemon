@@ -21,25 +21,46 @@ wheels/
 *.egg
 
 # Virtual environments
+.venv/
 venv/
 env/
 ENV/
 
 # Environment variables
 .env
+.env.local
 
-# Data
-data/
+# Data (keep structure, ignore content)
+data/*.db
+data/*.db-journal
+data/logs/
+data/sessions/
+
+# Logs
+logs/
+*.log
+/tmp/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Logs
-*.log
+*~
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Test outputs
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
+
+# Lock files
+uv.lock

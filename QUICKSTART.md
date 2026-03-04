@@ -1,66 +1,62 @@
-# Quick Start Guide
+# 🚀 快速启动指南
 
-## Prerequisites
+## 1. 安装依赖
 
-1. **Claude Code CLI** must be installed and authenticated
-   ```bash
-   claude --version
-   ```
+```bash
+uv pip install -e .
+```
 
-2. **Telegram Bot Token** from [@BotFather](https://t.me/botfather)
+## 2. 配置 (可选)
 
-## Setup Steps
+编辑 `.env` 文件，或使用默认配置。
 
-1. **Install dependencies**:
-   ```bash
-   uv venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   uv pip install -e .
-   ```
+## 3. 启动服务
 
-2. **Configure environment**:
-   ```bash
-   cp .env.example .env
-   ```
+```bash
+bash scripts/start_all.sh
+```
 
-   Edit `.env` and set:
-   - `TELEGRAM_BOT_TOKEN` - Your bot token from BotFather
-   - `TELEGRAM_ALLOWED_USERS` - Your Telegram user ID (get from [@userinfobot](https://t.me/userinfobot))
+## 4. 访问
 
-3. **Run the bot**:
-   ```bash
-   python main.py
-   ```
+打开浏览器访问: **http://localhost:5173/index.html**
 
-4. **Test it**:
-   - Open Telegram and find your bot
-   - Send `/start` to begin
-   - Send any message and get a response from Claude!
+默认账号:
+- 用户名: `admin`
+- 密码: `admin123`
 
-## Troubleshooting
+## 5. 开始聊天！
 
-**"Claude Code CLI not found"**
-- Make sure `claude` is in your PATH
-- Or set `CLAUDE_CODE_PATH` in `.env` to the full path
+输入消息，享受与 Claude 的对话 🤖
 
-**"TELEGRAM_BOT_TOKEN is required"**
-- Check that `.env` file exists and has the token
-- Make sure there are no extra spaces
+---
 
-**"Unauthorized access"**
-- Add your Telegram user ID to `TELEGRAM_ALLOWED_USERS` in `.env`
-- Format: `TELEGRAM_ALLOWED_USERS=123456789,987654321`
+## 其他访问方式
 
-## What's Working (Phase 1)
+### API 文档
+http://localhost:8765/docs
 
-✅ Telegram Bot receives messages
-✅ Calls Claude Code CLI for responses
-✅ Saves conversation history to SQLite
-✅ User authorization
-✅ Basic commands (/start, /help)
+### Telegram Bot
+如果配置了 `TELEGRAM_BOT_TOKEN`，Telegram Bot 也会同时运行。
 
-## Next Steps (Future Phases)
+---
 
-- Phase 2: Memory system with context building
-- Phase 3: Streaming responses for better UX
-- Phase 4: Multi-session management
+## 停止服务
+
+按 `Ctrl+C` 停止所有服务。
+
+---
+
+## 故障排除
+
+### 端口被占用
+修改 `.env` 中的 `WEB_PORT` 和前端端口。
+
+### 无法连接
+检查防火墙设置，确保端口 8000 和 3000 开放。
+
+### 数据库错误
+运行迁移: `python scripts/migrate_to_multichannel.py ./data/doraemon.db`
+
+---
+
+更多信息请查看 [README_WEB.md](README_WEB.md)
