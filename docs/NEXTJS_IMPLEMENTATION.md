@@ -208,11 +208,11 @@ cd frontend-next && npm run dev
 - [x] 完整的会话管理（列表、切换、创建）
 - [x] Markdown 渲染（react-markdown + remark-gfm）
 - [x] 代码高亮（rehype-highlight + highlight.js）
+- [x] 深色模式（next-themes，支持 light/dark/system）
 
 ### 短期（1-2 天）
 
 ### 中期（1 周）
-- [ ] 深色模式（next-themes）
 - [ ] 消息搜索
 - [ ] 键盘快捷键
 - [ ] 打字指示器
