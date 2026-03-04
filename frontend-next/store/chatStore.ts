@@ -1,0 +1,63 @@
+'use client';
+
+import { create } from 'zustand';
+import { Message } from '@/types/api';
+
+type ChatStatus = 'idle' | 'thinking' | 'streaming' | 'error';
+
+interface ChatState {
+  messages: Message[];
+  streamingContent: string;
+  status: ChatStatus;
+  error: string | null;
+
+  addMessage: (message: Message) => void;
+  setStreamingContent: (content: string) => void;
+  appendStreamingContent: (chunk: string) => void;
+  setStatus: (status: ChatStatus) => void;
+  setError: (error: string | null) => void;
+  completeStreaming: () => void;
+  clearMessages: () => void;
+}
+
+export const useChatStore = create<ChatState>((set, get) => ({
+  messages: [],
+  streamingContent: '',
+  status: 'idle',
+  error: null,
+
+  addMessage: (message) => set((state) => ({
+    messages: [...state.messages, message],
+  })),
+
+  setStreamingContent: (content) => set({ streamingContent: content }),
+
+  appendStreamingContent: (chunk) => set((state) => ({
+    streamingContent: state.streamingContent + chunk,
+  })),
+
+  setStatus: (status) => set({ status }),
+
+  setError: (error) => set({ error, status: error ? 'error' : 'idle' }),
+
+  completeStreaming: () => {
+    const { streamingContent } = get();
+    if (streamingContent) {
+      set((state) => ({
+        messages: [
+          ...state.messages,
+          {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: streamingContent,
+            timestamp: Date.now(),
+          },
+        ],
+        streamingContent: '',
+        status: 'idle',
+      }));
+    }
+  },
+
+  clearMessages: () => set({ messages: [], streamingContent: '', status: 'idle', error: null }),
+}));

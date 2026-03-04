@@ -12,7 +12,8 @@ uv pip install -e .
 bash scripts/start_all.sh
 
 # 3. 访问 Web 界面
-# http://localhost:5173/index.html
+# Next.js 版本: http://localhost:3000
+# 原版 (Vite): http://localhost:5173/index.html
 # 用户名: admin, 密码: admin123
 ```
 

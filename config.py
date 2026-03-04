@@ -29,7 +29,7 @@ class Config:
     WEB_SECRET_KEY: str = os.getenv("WEB_SECRET_KEY", "change-me-in-production")
     WEB_ALLOWED_ORIGINS: list[str] = [
         origin.strip()
-        for origin in os.getenv("WEB_ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+        for origin in os.getenv("WEB_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
         if origin.strip()
     ]
 
