@@ -10,6 +10,7 @@ interface ChatState {
   streamingContent: string;
   status: ChatStatus;
   error: string | null;
+  currentSessionId: number | null;
 
   addMessage: (message: Message) => void;
   setStreamingContent: (content: string) => void;
@@ -18,6 +19,8 @@ interface ChatState {
   setError: (error: string | null) => void;
   completeStreaming: (finalContent?: string) => void;
   clearMessages: () => void;
+  setCurrentSession: (sessionId: number | null) => void;
+  setMessages: (messages: Message[]) => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -25,6 +28,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   streamingContent: '',
   status: 'idle',
   error: null,
+  currentSessionId: null,
 
   addMessage: (message) => set((state) => ({
     messages: [...state.messages, message],
@@ -62,4 +66,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   clearMessages: () => set({ messages: [], streamingContent: '', status: 'idle', error: null }),
+
+  setCurrentSession: (sessionId) => set({ currentSessionId: sessionId }),
+
+  setMessages: (messages) => set({ messages }),
 }));

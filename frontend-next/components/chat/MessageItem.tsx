@@ -1,6 +1,7 @@
 'use client';
 
 import { Message } from '@/types/api';
+import { MarkdownContent } from './MarkdownContent';
 
 interface MessageItemProps {
   message: Message;
@@ -18,7 +19,11 @@ export function MessageItem({ message }: MessageItemProps) {
             : 'bg-white border border-gray-200 text-gray-800'
         }`}
       >
-        <div className="whitespace-pre-wrap break-words">{message.content}</div>
+        {isUser ? (
+          <div className="whitespace-pre-wrap break-words">{message.content}</div>
+        ) : (
+          <MarkdownContent content={message.content} />
+        )}
       </div>
     </div>
   );
