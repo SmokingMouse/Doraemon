@@ -5,6 +5,11 @@
   --foreground: #171717;
 }
 
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
@@ -21,7 +26,7 @@ body {
 
 /* Markdown 样式 */
 .markdown-content {
-  @apply text-gray-800;
+  @apply text-gray-800 dark:text-gray-200;
 }
 
 .markdown-content h1,
@@ -59,7 +64,7 @@ body {
 }
 
 .markdown-content pre {
-  @apply bg-gray-900 text-gray-100 rounded-lg p-4 my-3 overflow-x-auto;
+  @apply bg-gray-900 dark:bg-gray-950 text-gray-100 rounded-lg p-4 my-3 overflow-x-auto;
 }
 
 .markdown-content code {
@@ -67,7 +72,7 @@ body {
 }
 
 .markdown-content blockquote {
-  @apply border-l-4 border-gray-300 pl-4 my-3 italic text-gray-600;
+  @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4 my-3 italic text-gray-600 dark:text-gray-400;
 }
 
 .markdown-content table {
@@ -76,13 +81,13 @@ body {
 
 .markdown-content th,
 .markdown-content td {
-  @apply border border-gray-300 px-3 py-2;
+  @apply border border-gray-300 dark:border-gray-600 px-3 py-2;
 }
 
 .markdown-content th {
-  @apply bg-gray-100 font-semibold;
+  @apply bg-gray-100 dark:bg-gray-800 font-semibold;
 }
 
 .markdown-content hr {
-  @apply my-4 border-gray-300;
+  @apply my-4 border-gray-300 dark:border-gray-600;
 }

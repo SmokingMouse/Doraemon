@@ -20,7 +20,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
           code: ({ className, children, ...props }: any) => {
             const inline = !className;
             return inline ? (
-              <code className="bg-gray-100 text-red-600 px-1 py-0.5 rounded text-sm" {...props}>
+              <code className="bg-gray-100 dark:bg-gray-800 text-red-600 dark:text-red-400 px-1 py-0.5 rounded text-sm" {...props}>
                 {children}
               </code>
             ) : (

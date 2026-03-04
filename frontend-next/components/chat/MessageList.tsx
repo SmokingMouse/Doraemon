@@ -16,9 +16,9 @@ export function MessageList() {
   }, [messages, streamingContent]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900">
       {messages.length === 0 && !streamingContent && (
-        <div className="flex items-center justify-center h-full text-gray-400">
+        <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">
           <p>Start a conversation...</p>
         </div>
       )}
@@ -29,7 +29,7 @@ export function MessageList() {
 
       {status === 'thinking' && (
         <div className="flex justify-start mb-4">
-          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-500">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-gray-500 dark:text-gray-400">
             Thinking...
           </div>
         </div>

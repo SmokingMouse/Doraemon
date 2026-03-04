@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
 import { getSessions, createSession, getMessages, Session } from '@/lib/api';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export function Sidebar() {
   const router = useRouter();
@@ -81,8 +82,8 @@ export function Sidebar() {
   };
 
   return (
-    <div className="w-64 bg-gray-800 text-white flex flex-col">
-      <div className="p-4 border-b border-gray-700">
+    <div className="w-64 bg-gray-800 dark:bg-gray-900 text-white flex flex-col">
+      <div className="p-4 border-b border-gray-700 dark:border-gray-800">
         <h1 className="text-xl font-bold">Doraemon Chat</h1>
       </div>
 
@@ -106,8 +107,8 @@ export function Sidebar() {
                 onClick={() => handleSwitchSession(session.id)}
                 className={`w-full text-left p-3 rounded-lg transition-colors ${
                   currentSessionId === session.id
-                    ? 'bg-gray-700 border border-primary'
-                    : 'bg-gray-750 hover:bg-gray-700'
+                    ? 'bg-gray-700 dark:bg-gray-800 border border-primary'
+                    : 'bg-gray-750 dark:bg-gray-850 hover:bg-gray-700 dark:hover:bg-gray-800'
                 }`}
               >
                 <div className="flex justify-between items-start mb-1">
@@ -123,10 +124,11 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 border-t border-gray-700 dark:border-gray-800 space-y-2">
+        <ThemeToggle />
         <button
           onClick={handleLogout}
-          className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+          className="w-full bg-gray-700 dark:bg-gray-800 hover:bg-gray-600 dark:hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
         >
           Logout
         </button>
