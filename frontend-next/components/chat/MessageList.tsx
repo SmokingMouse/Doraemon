@@ -16,7 +16,7 @@ export function MessageList() {
   }, [messages, streamingContent]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900">
+    <div className="flex-1 overflow-y-auto p-6">
       {messages.length === 0 && !streamingContent && (
         <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">
           <p>Start a conversation...</p>
