@@ -16,7 +16,7 @@ interface ChatState {
   appendStreamingContent: (chunk: string) => void;
   setStatus: (status: ChatStatus) => void;
   setError: (error: string | null) => void;
-  completeStreaming: () => void;
+  completeStreaming: (finalContent?: string) => void;
   clearMessages: () => void;
 }
 
@@ -40,16 +40,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setError: (error) => set({ error, status: error ? 'error' : 'idle' }),
 
-  completeStreaming: () => {
+  completeStreaming: (finalContent?: string) => {
     const { streamingContent } = get();
-    if (streamingContent) {
+    // 如果提供了 finalContent，使用它；否则使用 streamingContent
+    const content = finalContent || streamingContent;
+    if (content) {
       set((state) => ({
         messages: [
           ...state.messages,
           {
             id: Date.now().toString(),
             role: 'assistant',
-            content: streamingContent,
+            content: content,
             timestamp: Date.now(),
           },
         ],

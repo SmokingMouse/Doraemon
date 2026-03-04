@@ -34,8 +34,8 @@ export function useWebSocket() {
           setStatus('streaming');
         }
       },
-      onComplete: () => {
-        completeStreaming();
+      onComplete: (content) => {
+        completeStreaming(content);
       },
       onError: (message) => {
         setError(message);

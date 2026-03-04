@@ -506,9 +506,13 @@ class ClaudeCodeService:
 
                 return (error_msg, actual_session_id, error_type)
 
-            response = ''.join(accumulated_output).strip()
-            logger.debug(f"Claude Code streaming response: {len(response)} chars")
-            return (response, actual_session_id, None)
+            full_response = ''.join(accumulated_output).strip()
+            logger.debug(f"Claude Code streaming response: {len(full_response)} chars")
+
+            # 提取最终回复（去除思考和工具调用部分）
+            final_response = self._extract_final_response(full_response)
+
+            return (final_response, actual_session_id, None)
 
         except FileNotFoundError:
             logger.error(f"Claude Code not found at: {config.CLAUDE_CODE_PATH}")
@@ -524,6 +528,47 @@ class ClaudeCodeService:
                     await process.wait()
                 except Exception as e:
                     logger.error(f"Failed to cleanup process: {e}")
+
+    def _extract_final_response(self, full_response: str) -> str:
+        """从完整响应中提取最终回复（去除思考和工具调用）
+
+        Args:
+            full_response: 包含思考、工具调用和最终回复的完整内容
+
+        Returns:
+            只包含最终回复的内容
+        """
+        lines = full_response.split('\n')
+        final_lines = []
+        skip_mode = False
+
+        for line in lines:
+            # 检测思考块开始
+            if '💭' in line and '思考过程' in line:
+                skip_mode = True
+                continue
+
+            # 检测思考块结束（分隔符）
+            if skip_mode and line.strip() == '---':
+                skip_mode = False
+                continue
+
+            # 检测工具调用
+            if '🔧 调用工具:' in line or '✅' in line and '完成' in line:
+                continue
+
+            # 如果不在跳过模式，保留这一行
+            if not skip_mode:
+                final_lines.append(line)
+
+        result = '\n'.join(final_lines).strip()
+
+        # 如果提取后为空，返回原始内容（防止意外情况）
+        if not result:
+            logger.warning("Extracted final response is empty, returning full response")
+            return full_response
+
+        return result
 
     def _cleanup_session(self, session_id: str):
         """清理会话文件，释放 session ID"""
