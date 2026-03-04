@@ -205,11 +205,11 @@ cd frontend-next && npm run dev
 
 ### 已完成 ✅
 - [x] 智能回复过滤（streaming 时展示思考/工具，完成后只保留最终回复）
+- [x] 完整的会话管理（列表、切换、创建）
+- [x] Markdown 渲染（react-markdown + remark-gfm）
+- [x] 代码高亮（rehype-highlight + highlight.js）
 
 ### 短期（1-2 天）
-- [ ] 完整的会话管理（列表、切换、删除）
-- [ ] Markdown 渲染（react-markdown）
-- [ ] 代码高亮（prism-react-renderer）
 
 ### 中期（1 周）
 - [ ] 深色模式（next-themes）
