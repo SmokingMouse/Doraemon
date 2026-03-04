@@ -13,7 +13,7 @@ export function MessageItem({ message }: MessageItemProps) {
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
       <div
-        className={`max-w-[70%] rounded-lg px-4 py-3 shadow-sm ${
+        className={`max-w-[70%] rounded-lg px-4 py-3 shadow-sm overflow-hidden ${
           isUser
             ? 'bg-blue-600 dark:bg-blue-700 text-white border border-blue-700 dark:border-blue-600'
             : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200'

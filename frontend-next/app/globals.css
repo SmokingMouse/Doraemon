@@ -10,7 +10,10 @@
   --foreground: #ededed;
 }
 
+html,
 body {
+  height: 100%;
+  overflow: hidden;
   color: var(--foreground);
   background: var(--background);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -90,4 +93,38 @@ body {
 
 .markdown-content hr {
   @apply my-4 border-gray-300 dark:border-gray-600;
+}
+
+/* KaTeX 公式样式 */
+.markdown-content .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  margin: 1em 0;
+}
+
+.markdown-content .katex {
+  font-size: 1em;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: inline-block;
+}
+
+.markdown-content .katex-html {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+}
+
+/* 防止 markdown 内容溢出 */
+.markdown-content {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.markdown-content * {
+  max-width: 100%;
 }

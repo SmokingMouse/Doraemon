@@ -142,15 +142,19 @@ export default function ChatPage() {
   ]);
 
   return (
-    <>
-      <MessageList />
-      <MessageInput onSend={sendMessage} inputRef={inputRef} onCommand={handleCommand} />
+    <div className="flex flex-col h-full w-full">
+      <div className="flex-1 min-h-0">
+        <MessageList />
+      </div>
+      <div className="flex-shrink-0">
+        <MessageInput onSend={sendMessage} inputRef={inputRef} onCommand={handleCommand} />
+      </div>
       <ShortcutsDialog isOpen={showShortcuts} onClose={() => setShowShortcuts(false)} />
       <CommandPalette
         isOpen={showCommands}
         onClose={() => setShowCommands(false)}
         onCommand={handleCommand}
       />
-    </>
+    </div>
   );
 }

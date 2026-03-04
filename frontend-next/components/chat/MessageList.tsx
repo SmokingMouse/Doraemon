@@ -9,18 +9,42 @@ export function MessageList() {
   const messages = useChatStore((state) => state.messages);
   const streamingContent = useChatStore((state) => state.streamingContent);
   const status = useChatStore((state) => state.status);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // 自动滚动到底部
   useEffect(() => {
-    // 只在有新消息或 streaming 内容时滚动
-    if (messages.length > 0 || streamingContent) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    if (containerRef.current) {
+      const timer = setTimeout(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+      }, 50);
+      return () => clearTimeout(timer);
     }
-  }, [messages.length, streamingContent]);
+  }, [messages, streamingContent]);
+
+  // 阻止滚动事件冒泡到外层
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const isAtTop = scrollTop === 0;
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
+
+    // 如果在顶部向上滚动，或在底部向下滚动，阻止事件冒泡
+    if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-y-auto p-6">
+    <div
+      className="h-full w-full overflow-y-auto overflow-x-hidden p-6"
+      ref={containerRef}
+      onWheel={handleWheel}
+    >
       {messages.length === 0 && !streamingContent && (
         <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">
           <p>Start a conversation...</p>
@@ -40,8 +64,6 @@ export function MessageList() {
       )}
 
       {streamingContent && <StreamingMessage content={streamingContent} />}
-
-      <div ref={messagesEndRef} />
     </div>
   );
 }
