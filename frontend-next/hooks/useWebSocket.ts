@@ -10,6 +10,7 @@ const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8765/ws';
 export function useWebSocket() {
   const wsRef = useRef<WebSocketManager | null>(null);
   const token = useAuthStore((state) => state.token);
+  const currentSessionId = useChatStore((state) => state.currentSessionId);
   const {
     appendStreamingContent,
     setStatus,
@@ -52,7 +53,7 @@ export function useWebSocket() {
 
   const sendMessage = (content: string) => {
     if (wsRef.current) {
-      wsRef.current.sendMessage(content);
+      wsRef.current.sendMessage(content, currentSessionId);
     }
   };
 

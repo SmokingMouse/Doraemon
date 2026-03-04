@@ -104,3 +104,15 @@ async def get_messages(
         )
         for m in messages
     ]
+
+
+@router.delete("/sessions/{session_id}")
+async def delete_session(
+    session_id: int,
+    user_id: str = Depends(get_current_user),
+):
+    """Delete a session."""
+    # TODO: Add permission check - verify session belongs to user
+    await db.delete_session(session_id)
+    logger.info(f"User {user_id} deleted session: {session_id}")
+    return {"status": "success"}

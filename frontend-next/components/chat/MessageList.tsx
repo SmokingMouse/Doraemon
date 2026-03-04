@@ -10,13 +10,17 @@ export function MessageList() {
   const streamingContent = useChatStore((state) => state.streamingContent);
   const status = useChatStore((state) => state.status);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streamingContent]);
+    // 只在有新消息或 streaming 内容时滚动
+    if (messages.length > 0 || streamingContent) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [messages.length, streamingContent]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div ref={containerRef} className="flex-1 overflow-y-auto p-6">
       {messages.length === 0 && !streamingContent && (
         <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">
           <p>Start a conversation...</p>

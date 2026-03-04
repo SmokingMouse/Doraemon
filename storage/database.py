@@ -285,3 +285,20 @@ class Database:
                 (1 if show_thinking else 0, user_id),
             )
             await db.commit()
+
+    async def delete_session(self, session_id: int):
+        """Delete a session and all its messages."""
+        async with aiosqlite.connect(self.db_path) as db:
+            # Delete messages first (foreign key constraint)
+            await db.execute(
+                "DELETE FROM messages WHERE session_id = ?",
+                (session_id,),
+            )
+            # Delete session
+            await db.execute(
+                "DELETE FROM sessions WHERE id = ?",
+                (session_id,),
+            )
+            await db.commit()
+
+            await db.commit()
