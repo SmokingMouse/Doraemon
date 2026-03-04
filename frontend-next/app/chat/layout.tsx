@@ -10,7 +10,7 @@ export default function ChatLayout({
 }) {
   return (
     <AuthGuard>
-      <div className="flex h-screen">
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
         <Sidebar />
         <div className="flex-1 flex flex-col">{children}</div>
       </div>

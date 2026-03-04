@@ -18,6 +18,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.27",
+    "katex": "^0.16.33",
     "next": "^16.1.6",
     "next-themes": "^0.4.6",
     "postcss": "^8.5.8",
@@ -25,7 +26,9 @@
     "react-dom": "^19.2.4",
     "react-markdown": "^10.1.0",
     "rehype-highlight": "^7.0.2",
+    "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
     "zustand": "^5.0.11"

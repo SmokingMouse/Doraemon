@@ -48,10 +48,10 @@ export const SHORTCUTS: KeyboardShortcut[] = [
     description: 'Focus input',
   },
   {
-    key: 'b',
+    key: 'p',
     ctrl: true,
     action: () => {},
-    description: 'Toggle sidebar',
+    description: 'Command palette',
   },
   {
     key: 'd',

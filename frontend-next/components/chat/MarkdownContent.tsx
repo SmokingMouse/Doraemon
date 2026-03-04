@@ -2,8 +2,11 @@
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import rehypeHighlight from 'rehype-highlight';
+import rehypeKatex from 'rehype-katex';
 import 'highlight.js/styles/github-dark.css';
+import 'katex/dist/katex.min.css';
 
 interface MarkdownContentProps {
   content: string;
@@ -13,8 +16,8 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
   return (
     <div className="markdown-content prose prose-sm max-w-none">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight]}
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeHighlight, rehypeKatex]}
         components={{
           // 自定义代码块样式
           code: ({ className, children, ...props }: any) => {
