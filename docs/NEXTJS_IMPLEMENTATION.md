@@ -25,12 +25,19 @@
 - ✅ 流式响应显示（逐字显示 + 闪烁光标）
 - ✅ 状态显示（thinking, streaming, error）
 - ✅ 自动滚动到底部
+- ✅ Markdown 渲染（react-markdown + remark-gfm）
+- ✅ LaTeX 公式支持（remark-math + rehype-katex）
+- ✅ 代码高亮（rehype-highlight + highlight.js）
+- ✅ 智能回复过滤（streaming 时展示思考/工具，完成后只保留最终回复）
 
 ### 4. 布局
 - ✅ 侧边栏（会话管理 + 退出登录）
 - ✅ 响应式设计（桌面 + 移动端）
 - ✅ 新建会话功能
+- ✅ 删除会话功能
 - ✅ 退出登录功能
+- ✅ 深色模式（next-themes，支持 light/dark/system）
+- ✅ 键盘快捷键（Ctrl+K 新建，Ctrl+/ 聚焦输入，Ctrl+D 切换深色，Ctrl+P 命令面板，Shift+? 快捷键帮助）
 
 ### 5. 状态管理
 - ✅ Zustand 状态管理
@@ -38,6 +45,15 @@
 - ✅ 聊天状态（chatStore）
 - ✅ 消息列表管理
 - ✅ 流式内容管理
+- ✅ 会话隔离（WebSocket 消息带 session_id）
+
+### 6. 命令系统
+- ✅ 命令面板（Ctrl+P 触发）
+- ✅ /new - 创建新会话
+- ✅ /clear - 清空当前会话上下文
+- ✅ /sessions - 显示会话列表
+- ✅ /thinking - 思考过程显示（待实现）
+- ✅ /stats - 统计信息（待实现）
 
 ## 技术栈
 
@@ -62,19 +78,25 @@ frontend-next/
 │       └── page.tsx       # 聊天页面
 ├── components/
 │   ├── auth/
-│   │   └── AuthGuard.tsx  # 认证守卫
+│   │   └── AuthGuard.tsx          # 认证守卫
 │   ├── chat/
 │   │   ├── MessageList.tsx        # 消息列表
 │   │   ├── MessageItem.tsx        # 单条消息
 │   │   ├── MessageInput.tsx       # 输入框
-│   │   └── StreamingMessage.tsx   # 流式消息
-│   └── layout/
-│       └── Sidebar.tsx    # 侧边栏
+│   │   ├── StreamingMessage.tsx   # 流式消息
+│   │   └── MarkdownContent.tsx    # Markdown 渲染
+│   ├── layout/
+│   │   └── Sidebar.tsx            # 侧边栏
+│   ├── CommandPalette.tsx         # 命令面板
+│   ├── ShortcutsDialog.tsx        # 快捷键帮助
+│   └── ThemeProvider.tsx          # 主题提供者
 ├── lib/
 │   ├── api.ts             # API 客户端
-│   └── websocket.ts       # WebSocket 管理器
+│   ├── websocket.ts       # WebSocket 管理器
+│   └── utils.ts           # 工具函数（消息 ID 生成等）
 ├── hooks/
-│   └── useWebSocket.ts    # WebSocket Hook
+│   ├── useWebSocket.ts          # WebSocket Hook
+│   └── useKeyboardShortcuts.ts  # 键盘快捷键 Hook
 ├── store/
 │   ├── authStore.ts       # 认证状态
 │   └── chatStore.ts       # 聊天状态
@@ -90,10 +112,10 @@ frontend-next/
 
 ## 文件统计
 
-- **总文件数**: 20+
-- **代码行数**: ~1000 行
-- **组件数**: 8 个
-- **Hook 数**: 1 个
+- **总文件数**: 25+
+- **代码行数**: ~1500 行
+- **组件数**: 11 个
+- **Hook 数**: 2 个
 - **Store 数**: 2 个
 
 ## 后端修改
@@ -149,21 +171,35 @@ cd frontend-next && npm run dev
    - ✅ Tailwind CSS 配置正确
    - ✅ 所有组件无语法错误
 
+### ✅ 已测试功能
+
+1. **端到端测试**
+   - ✅ 登录流程
+   - ✅ 消息发送
+   - ✅ 流式响应
+   - ✅ 智能回复过滤（思考/工具过程在 streaming 时展示，完成后隐藏）
+   - ✅ 新建会话
+   - ✅ 删除会话
+   - ✅ 会话切换
+   - ✅ 会话隔离（消息不串台）
+   - ✅ 退出登录
+   - ✅ LaTeX 公式渲染
+   - ✅ 代码高亮
+   - ✅ 深色模式切换
+   - ✅ 命令系统
+
+2. **UI 测试**
+   - ✅ 响应式布局
+   - ✅ 样式一致性
+   - ✅ 交互体验
+   - ✅ 滚动行为（单滚动条，无页面溢出）
+
 ### 🔄 待测试功能
 
 1. **端到端测试**
-   - [ ] 登录流程
-   - [ ] 消息发送
-   - [ ] 流式响应
-   - [ ] WebSocket 重连
-   - [ ] 新建会话
-   - [ ] 退出登录
-   - [x] 智能回复过滤（思考/工具过程在 streaming 时展示，完成后隐藏）
-
-2. **UI 测试**
-   - [ ] 响应式布局
-   - [ ] 样式一致性
-   - [ ] 交互体验
+   - [ ] WebSocket 断线重连
+   - [ ] 长时间会话稳定性
+   - [ ] 大量消息性能
 
 ## 与原版对比
 
@@ -201,21 +237,46 @@ cd frontend-next && npm run dev
    - 现代化的 UI 设计系统
    - 更好的性能优化
 
+## 已知问题和修复
+
+### 已修复 ✅
+- ✅ 双滑块问题（LaTeX 公式渲染导致容器高度计算错误）
+  - 修复方案：重构布局结构，使用 `min-h-0` 和 `min-w-0` 打破 flex 默认约束
+  - 添加 KaTeX 公式溢出控制样式
+  - 确保只有 MessageList 一个滚动容器
+- ✅ 页面滚动溢出（消息列表滚动到底部时整个页面继续滚动）
+  - 修复方案：html/body 添加 `overflow: hidden`
+  - MessageList 添加滚动事件冒泡阻止
+- ✅ 会话串台问题（消息发送到错误的会话）
+  - 修复方案：WebSocket 消息添加 session_id 字段
+- ✅ 深色模式不生效
+  - 修复方案：调整背景色位置到正确的容器
+- ✅ React 重复 key 警告
+  - 修复方案：使用 timestamp + counter 生成唯一消息 ID
+- ✅ 用户消息不可见
+  - 修复方案：使用蓝色背景和明确边框
+
 ## 待优化功能
 
 ### 已完成 ✅
 - [x] 智能回复过滤（streaming 时展示思考/工具，完成后只保留最终回复）
-- [x] 完整的会话管理（列表、切换、创建）
+- [x] 完整的会话管理（列表、切换、创建、删除）
 - [x] Markdown 渲染（react-markdown + remark-gfm）
+- [x] LaTeX 公式支持（remark-math + rehype-katex）
 - [x] 代码高亮（rehype-highlight + highlight.js）
 - [x] 深色模式（next-themes，支持 light/dark/system）
-- [x] 键盘快捷键（Ctrl+K, Ctrl+/, Ctrl+D, Shift+?）
+- [x] 键盘快捷键（Ctrl+K, Ctrl+/, Ctrl+D, Ctrl+P, Shift+?）
+- [x] 命令系统（/new, /clear, /sessions 等）
+- [x] 滚动优化（单滚动条，无页面溢出）
 
 ### 短期（1-2 天）
+- [ ] /thinking 命令实现（显示/隐藏思考过程）
+- [ ] /stats 命令实现（显示统计信息）
 
 ### 中期（1 周）
 - [ ] 消息搜索
 - [ ] 打字指示器
+- [ ] 消息编辑/删除
 
 ### 长期（2 周+）
 - [ ] 文件上传
