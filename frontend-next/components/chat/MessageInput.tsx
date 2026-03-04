@@ -5,9 +5,10 @@ import { useChatStore } from '@/store/chatStore';
 
 interface MessageInputProps {
   onSend: (content: string) => void;
+  inputRef?: React.RefObject<HTMLTextAreaElement>;
 }
 
-export function MessageInput({ onSend }: MessageInputProps) {
+export function MessageInput({ onSend, inputRef }: MessageInputProps) {
   const [input, setInput] = useState('');
   const status = useChatStore((state) => state.status);
   const addMessage = useChatStore((state) => state.addMessage);
@@ -40,6 +41,7 @@ export function MessageInput({ onSend }: MessageInputProps) {
     <form onSubmit={handleSubmit} className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
       <div className="flex gap-2">
         <textarea
+          ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
