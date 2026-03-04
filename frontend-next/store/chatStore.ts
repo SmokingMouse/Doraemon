@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { Message } from '@/types/api';
+import { generateMessageId } from '@/lib/utils';
 
 type ChatStatus = 'idle' | 'thinking' | 'streaming' | 'error';
 
@@ -53,7 +54,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         messages: [
           ...state.messages,
           {
-            id: Date.now().toString(),
+            id: generateMessageId(),
             role: 'assistant',
             content: content,
             timestamp: Date.now(),

@@ -56,8 +56,8 @@ export function Sidebar() {
       const messages = await getMessages(sessionId);
       setCurrentSession(sessionId);
       setMessages(
-        messages.map((m) => ({
-          id: String(m.created_at),
+        messages.map((m, index) => ({
+          id: `${m.created_at}-${index}`, // 使用时间戳+索引确保唯一性
           role: m.role,
           content: m.content,
           timestamp: m.created_at,

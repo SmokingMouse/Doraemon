@@ -10,6 +10,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useChatStore } from '@/store/chatStore';
 import { createSession, getSessions } from '@/lib/api';
+import { generateMessageId } from '@/lib/utils';
 
 export default function ChatPage() {
   const { sendMessage } = useWebSocket();
@@ -25,7 +26,7 @@ export default function ChatPage() {
       setCurrentSession(session_id);
       clearMessages();
       addMessage({
-        id: Date.now().toString(),
+        id: generateMessageId(),
         role: 'assistant',
         content: '✨ 新会话已创建！现在你可以开始一个全新的对话了。',
         timestamp: Date.now(),
@@ -38,7 +39,7 @@ export default function ChatPage() {
   const handleClearContext = () => {
     clearMessages();
     addMessage({
-      id: Date.now().toString(),
+      id: generateMessageId(),
       role: 'assistant',
       content: '🧹 上下文已清空！当前会话的对话历史已保存，但 Claude 不再记得之前的对话内容。',
       timestamp: Date.now(),
@@ -52,7 +53,7 @@ export default function ChatPage() {
         .map((s, i) => `${i + 1}. Session #${s.id} - ${s.message_count} 条消息`)
         .join('\n');
       addMessage({
-        id: Date.now().toString(),
+        id: generateMessageId(),
         role: 'assistant',
         content: `📋 会话列表：\n\n${sessionList}\n\n点击侧边栏的会话可以切换。`,
         timestamp: Date.now(),
@@ -75,7 +76,7 @@ export default function ChatPage() {
         break;
       case '/thinking':
         addMessage({
-          id: Date.now().toString(),
+          id: generateMessageId(),
           role: 'assistant',
           content: '💭 思考过程显示功能将在后续版本中实现。',
           timestamp: Date.now(),
@@ -83,7 +84,7 @@ export default function ChatPage() {
         break;
       case '/stats':
         addMessage({
-          id: Date.now().toString(),
+          id: generateMessageId(),
           role: 'assistant',
           content: '📊 统计功能将在后续版本中实现。',
           timestamp: Date.now(),
@@ -91,7 +92,7 @@ export default function ChatPage() {
         break;
       default:
         addMessage({
-          id: Date.now().toString(),
+          id: generateMessageId(),
           role: 'assistant',
           content: `❌ 未知命令: ${command}\n\n可用命令：/new, /clear, /sessions, /thinking, /stats`,
           timestamp: Date.now(),

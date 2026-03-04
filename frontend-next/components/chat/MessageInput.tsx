@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useChatStore } from '@/store/chatStore';
+import { generateMessageId } from '@/lib/utils';
 
 interface MessageInputProps {
   onSend: (content: string) => void;
@@ -29,7 +30,7 @@ export function MessageInput({ onSend, inputRef, onCommand }: MessageInputProps)
 
     // Add user message to chat
     addMessage({
-      id: Date.now().toString(),
+      id: generateMessageId(),
       role: 'user',
       content: input.trim(),
       timestamp: Date.now(),
