@@ -209,12 +209,12 @@ cd frontend-next && npm run dev
 - [x] Markdown 渲染（react-markdown + remark-gfm）
 - [x] 代码高亮（rehype-highlight + highlight.js）
 - [x] 深色模式（next-themes，支持 light/dark/system）
+- [x] 键盘快捷键（Ctrl+K, Ctrl+/, Ctrl+D, Shift+?）
 
 ### 短期（1-2 天）
 
 ### 中期（1 周）
 - [ ] 消息搜索
-- [ ] 键盘快捷键
 - [ ] 打字指示器
 
 ### 长期（2 周+）
