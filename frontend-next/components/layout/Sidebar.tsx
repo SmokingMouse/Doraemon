@@ -77,7 +77,9 @@ export function Sidebar() {
 
     setDeletingId(sessionId);
     try {
+      console.log('Deleting session:', sessionId);
       await deleteSession(sessionId);
+      console.log('Session deleted successfully');
 
       // 如果删除的是当前会话，清空消息
       if (sessionId === currentSessionId) {
@@ -88,7 +90,7 @@ export function Sidebar() {
       await loadSessions();
     } catch (error) {
       console.error('Failed to delete session:', error);
-      alert('删除失败，请重试');
+      alert(`删除失败: ${error instanceof Error ? error.message : '未知错误'}`);
     } finally {
       setDeletingId(null);
     }
